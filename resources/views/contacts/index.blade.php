@@ -11,7 +11,46 @@
             <a href="{{ route('contacts.create') }}" class="btn btn-blue">Crear Contacto</a>
         </div>
         @if ($contacts->count())
-            <p>Aqui estan tus contactos</p>
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">
+                                Nombre
+                            </th>
+                            <th scope="col" class="px-6 py-3">
+                                Correo
+                            </th>
+                            <th scope="col" class="px-6 py-3">
+                                Acción
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($contacts as $item)
+                            <tr>
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                    {{ $item->name }}
+                                </th>
+                                <td class="px-6 py-4">
+                                    {{ $item->user->email }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-end space-x-2">
+                                        <a href="{{ route('contacts.edit', $item) }}" class="btn btn-blue">Editar</a>
+                                        <form action="{{ route('contacts.destroy', $item) }}" method="POST">
+                                            @method('DELETE')
+                                            @csrf
+                                            <button type="submit" class="btn btn-red">Eliminar</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
         @else
             <div class="flex w-full overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800">
                 <div class="flex items-center justify-center w-12 bg-blue-500">

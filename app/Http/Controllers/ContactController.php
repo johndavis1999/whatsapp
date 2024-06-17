@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\Contact;
 use App\Models\User;
+use App\Rules\InvalidEmail;
 
 class ContactController extends Controller
 {
@@ -37,6 +38,7 @@ class ContactController extends Controller
                 'required',
                 'exists:users',
                 Rule::notIn([auth()->user()->email]),
+                new InvalidEmail
             ],
         ]);
 
@@ -53,19 +55,11 @@ class ContactController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Contact $contact)
-    {
-        return view('contacts.create', compact('contact'));
-    }
-
-    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Contact $contact)
     {
-        return view('contacts.create', compact('contact'));
+        return view('contacts.edit', compact('contact'));
     }
 
     /**
@@ -73,7 +67,26 @@ class ContactController extends Controller
      */
     public function update(Request $request, Contact $contact)
     {
-        //
+        $request->validate([
+            'name' => 'required|min:3|max:50',
+            'email' => [
+                'email',
+                'required',
+                'exists:users',
+                Rule::notIn([auth()->user()->email]),
+                new InvalidEmail($contact->user->email)
+            ],
+        ]);
+        
+        $user = User::where('email', $request->email)->first();
+
+        $data['contact_id'] = $user->id;
+        $data['name'] = $request->name;
+        
+        $contact->update($data);
+        session()->flash('flash.banner', 'El contacto se actualizó correctamente.');
+        session()->flash('flash.bannerStyle', 'success');
+        return redirect()->route('contacts.edit', $contact);
     }
 
     /**
@@ -81,6 +94,9 @@ class ContactController extends Controller
      */
     public function destroy(Contact $contact)
     {
-        //
+        $contact->delete();
+        session()->flash('flash.banner', 'El contacto se eliminó correctamente.');
+        session()->flash('flash.bannerStyle', 'success');
+        return redirect()->route('contacts.index');
     }
 }

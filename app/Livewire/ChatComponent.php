@@ -7,6 +7,8 @@ use App\Models\Contact;
 use App\Models\Chat;
 use App\Models\Message;
 
+use Illuminate\SUpport\Facades\Notification;
+
 class ChatComponent extends Component
 {
     public $search;
@@ -72,6 +74,9 @@ class ChatComponent extends Component
             'user_id' => auth()->user()->id
         ]);
 
+        #dd($this->users_notifications);
+        Notification::send($this->users_notifications, new \App\Notifications\NewMessage($this->chat));
+
         $this->reset('bodyMessage', 'contactChat');
     }
 
@@ -82,8 +87,11 @@ class ChatComponent extends Component
     }
 
     public function getChatsProperty(){
-        return auth()->user()->chats()->get();
+        return auth()->user()->chats()->get()->sortByDesc('last_message_at');
+    }
 
+    public function getUsersNotificationsProperty(){
+        return $this->chat ? $this->chat->users->where('id', '!=', auth()->id()) : [];
     }
     
     public function render()

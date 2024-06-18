@@ -53,4 +53,13 @@ class Chat extends Model
             }
         );
     }
+
+    //mutadores
+    public function lastMessageAt(): Attribute{
+        return new Attribute(
+            get: function($value){
+                return $this->messages->last()->created_at;
+            }
+        );
+    }
 }

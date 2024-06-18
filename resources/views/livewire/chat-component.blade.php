@@ -39,17 +39,22 @@
                     @foreach ($this->chats as $chatItem)
                         <div wire:key="chats-({{ $chatItem->id }})"
                             wire:click="open_chat({{ $chatItem }})"
-                            class="flex items-center {{ $chat && $chat->id == $chatItem->id ? 'bg-gray-100' : 'bg-white' }} hover:bg-gray-100 cursor-pointer px-3" >
+                            class="flex items-center justify-between {{ $chat && $chat->id == $chatItem->id ? 'bg-gray-100' : 'bg-white' }} hover:bg-gray-100 cursor-pointer px-3" >
 
                             <figure>
                                 <img class="h-12 w-12 object-cover object-center rounded-full" src="{{ $chatItem->image }}" alt="{{ $chatItem->name }}">
                             </figure>
-                            <div class="ml-4 flex-1 py-4 border-b border-gray-200">
-                                <p>
-                                    {{ $chatItem->name }}
-                                </p>
-                                <p class="text-xs">
-                                    10:00 pm
+                            <div class="w-[calc(100%-4rem)] py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <p>
+                                        {{ $chatItem->name }}
+                                    </p>
+                                    <p class="text-xs">
+                                        {{ $chatItem->lastMessageAt->format('d-m-y h:i A') }}
+                                    </p>
+                                </div>
+                                <p class="text-sm text-gray-700 mt-1 truncate">
+                                    {{ $chatItem->messages->last()->body }}
                                 </p>
                             </div>
                         </div>
@@ -83,12 +88,12 @@
                 <div class="h-[calc(100vh-11rem)] px-3 py-2 overflow-auto">
                     {{-- contenido del chat --}}
                     @foreach ($this->messages as $message)
-                        <div class="flex justify-end mb-2">
-                            <div class="rounderd px-3 py-2 bg-green-100">
+                        <div class="flex {{ $message->user_id == auth()->id() ? 'justify-end' : 'justify-start' }} mb-2">
+                            <div class="rounderd px-3 py-2 {{ $message->user_id == auth()->id() ? 'bg-green-100' : 'bg-gray-200' }}">
                                 <p class="text-sm">
                                     {{ $message->body }}
                                 </p>
-                                <p class="test-right text-xs text-gray-600 mt-1">
+                                <p class="{{ $message->user_id == auth()->id() ? 'text-right' : 'text-left' }} text-xs text-gray-600 mt-1">
                                     {{ $message->created_at->format('d-m-y h:i A') }}
                                 </p>
                             </div>

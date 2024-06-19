@@ -7,15 +7,34 @@ use App\Models\Contact;
 use App\Models\Chat;
 use App\Models\Message;
 
-use Illuminate\SUpport\Facades\Notification;
+use Illuminate\Support\Facades\Notification;
 
 class ChatComponent extends Component
 {
     public $search;
     
-    public $contactChat, $chat;
+    public $contactChat, $chat, $chat_id;
     
     public $bodyMessage;
+
+    //listenners notifications
+    public function getListeners()
+    {   
+        $user_id = auth()->user()->id;
+
+        return [
+            "echo-notification:App.Models.User.{$user_id},notification" => 'render',
+        ];
+    }
+
+    //Ciclo de Vida
+    public function updatedBodyMessage($value){
+        if($value){
+            #dd('has escrito: ' . $value);
+            Notification::send($this->users_notifications, new \App\Notifications\UserTyping($this->chat->id));
+        }
+    }
+
 
     // Metodos
     // Propiedad computada para obtener contactos basados en la búsqueda
@@ -44,6 +63,7 @@ class ChatComponent extends Component
                     ->first();
         if($chat){
             $this->chat = $chat;
+            $this->chat_id = $chat->id;
             $this->reset('contactChat', 'bodyMessage', 'search');
         }else{
             $this->contactChat = $contact;
@@ -54,6 +74,7 @@ class ChatComponent extends Component
     public function open_chat(Chat $chat)
     {
         $this->chat = $chat;
+        $this->chat_id = $chat->id;
         $this->reset('contactChat', 'bodyMessage');
         
     }
@@ -66,6 +87,7 @@ class ChatComponent extends Component
 
         if(!$this->chat){
             $this->chat = Chat::create();
+            $this->chat_id = $chat->id;
             $this->chat->users()->attach([auth()->user()->id, $this->contactChat->contact_id]);
         }
 
@@ -96,6 +118,9 @@ class ChatComponent extends Component
     
     public function render()
     {
+        if($this->chat){
+            $this->dispatch('scrollIntoView');
+        }
         return view('livewire.chat-component')->layout('layouts.chat');
     }
 }

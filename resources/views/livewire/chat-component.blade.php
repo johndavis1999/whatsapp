@@ -1,4 +1,4 @@
-<div class="bg-gray-50 rounded-lg shadow border border-gray-200 overflow-hidden">
+<div x-data="data()" class="bg-gray-50 rounded-lg shadow border border-gray-200 overflow-hidden">
     {{-- To attain knowledge, add things every day; To attain wisdom, subtract things every day. --}}
     <div class="grid grid-cols-3 divide-x divide-gray-200">
         <div class="col-span-1">
@@ -80,7 +80,10 @@
                                 {{ $contactChat->name }}
                             @endif
                         </p>
-                        <p class="text-green-600 text-xs">
+                        <p class="text-gray-600 text-xs" x-show="chat_id == typingChatId">
+                            Escribiendo ...
+                        </p>
+                        <p class="text-green-600 text-xs" x-show="chat_id != typingChatId">
                             En linea
                         </p>
                     </div>
@@ -99,6 +102,7 @@
                             </div>
                         </div>
                     @endforeach
+                    <span id="final"></span>
                 </div>
                 <form class="bg-gray-100 h-16 flex items-center px-4" wire:submit.prevent="sendMessage()">
                     <x-input wire:model.live="bodyMessage" class="flex-1" type="text" placeholder="Escribe un mensaje" autofocus/>
@@ -116,4 +120,40 @@
             @endif
         </div>
     </div>
+    @push('js')
+        <script>
+            function data(){
+                return{
+                    chat_id: @entangle('chat_id'),
+                    typingChatId: null,
+                    init(){
+                        Echo.private('App.Models.User.' + {{ auth()->id() }})
+                        .notification((notification) => {
+                            if(notification.type == 'App\\Notifications\\UserTyping'){
+                                //console.log("Escribiendo..");
+                                this.typingChatId = notification.chat_id;
+                                setTimeout(() => {
+                                    this.typingChatId = null;
+                                }, 2000);
+                            }
+                        });
+                    }
+                }
+            }
+
+            Livewire.on('scrollIntoView', function () {
+                //console.log("Evento 'scrollIntoView' recibido.");
+                setTimeout(() => {
+                    var finalElement = document.getElementById('final');
+                    if (finalElement) {
+                        //console.log("Elemento encontrado, desplazándose.");
+                        finalElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    } else {
+                        //console.error("Elemento con id 'final' no encontrado en el DOM.");
+                    }
+                }, 5); // Retraso de 200 milisegundos
+            });
+        </script>
+    @endpush
+
 </div>

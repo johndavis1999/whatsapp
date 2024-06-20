@@ -17,6 +17,12 @@ class ChatComponent extends Component
     
     public $bodyMessage;
 
+    public $users;
+
+    public function mount(){
+        $this->users = collect();
+    }
+
     //listenners notifications
     public function getListeners()
     {   
@@ -24,14 +30,27 @@ class ChatComponent extends Component
 
         return [
             "echo-notification:App.Models.User.{$user_id},notification" => 'render',
+            "echo-presence:chat.1,here" => 'chatHere',
+            "echo-presence:chat.1,joining" => 'chatJoining',
+            "echo-presence:chat.1,leaving" => 'chatLeaving',
         ];
     }
 
     //Ciclo de Vida
     public function updatedBodyMessage($value){
-        if($value){
-            #dd('has escrito: ' . $value);
-            Notification::send($this->users_notifications, new \App\Notifications\UserTyping($this->chat->id));
+        //if($value){
+        //    #dd('has escrito: ' . $value);
+        //    Notification::send($this->users_notifications, new \App\Notifications\UserTyping($this->chat->id));
+        //}
+        //fix abrir nuevo chat
+        
+        if (empty($this->users_notifications->first()->id)){
+            return collect();
+        }
+        else{
+            if($value){
+                Notification::send($this->users_notifications, new \App\Notifications\UserTyping($this->chat->id));  
+            }
         }
     }
 
@@ -77,6 +96,10 @@ class ChatComponent extends Component
         $this->chat_id = $chat->id;
         $this->reset('contactChat', 'bodyMessage');
         
+        $chat->messages()->where('user_id', '!=', auth()->id())->where('is_read', false)->update([
+            'is_read' => true
+        ]);
+        Notification::send($this->users_notifications, new \App\Notifications\NewMessage());
     }
 
     public function sendMessage(Contact $contact)
@@ -87,7 +110,9 @@ class ChatComponent extends Component
 
         if(!$this->chat){
             $this->chat = Chat::create();
-            $this->chat_id = $chat->id;
+            //$this->chat_id = $chat->id;
+            // fix envio de mensajes a contacto nuevo, revisar y verificar si funca en otros casos de uso
+            $this->chat_id = $this->chat;
             $this->chat->users()->attach([auth()->user()->id, $this->contactChat->contact_id]);
         }
 
@@ -113,12 +138,46 @@ class ChatComponent extends Component
     }
 
     public function getUsersNotificationsProperty(){
-        return $this->chat ? $this->chat->users->where('id', '!=', auth()->id()) : [];
+        return $this->chat ? $this->chat->users->where('id', '!=', auth()->id()) : collect();
+    }
+
+    public function getActiveProperty(){
+        //return $this->users->contains($this->users_notifications->first()->id);
+        //fix error al abrir nuevo chat
+        if (empty($this->users_notifications->first()->id)){
+            return collect();
+        }else{
+            return $this->users->contains($this->users_notifications->first()->id);
+        }
+    }
+
+    public function chatHere($users){
+        #dd($event);
+        $this->users = collect($users)->pluck('id');
+    }
+
+    public function chatJoining($user){
+        #dd($event);
+        $this->users->push($user['id']);
+    }
+
+    public function chatLeaving($user){
+        #dd($event);
+        $this->users = $this->users->filter(function($id) use($user){
+            return $id != $user['id'];
+        });
     }
     
     public function render()
     {
         if($this->chat){
+            //buscar otras alternativas a esta funcionalidad, ya que se genera un bucle y llega a consumir muchos recursos
+            //----------
+            $this->chat->messages()->where('user_id', '!=', auth()->id())->where('is_read', false)->update([
+                'is_read' => true
+            ]);
+            //----------
+            Notification::send($this->users_notifications, new \App\Notifications\NewMessage());
             $this->dispatch('scrollIntoView');
         }
         return view('livewire.chat-component')->layout('layouts.chat');

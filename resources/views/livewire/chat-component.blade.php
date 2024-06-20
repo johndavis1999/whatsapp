@@ -46,16 +46,25 @@
                             </figure>
                             <div class="w-[calc(100%-4rem)] py-4 border-b border-gray-200">
                                 <div class="flex justify-between items-center">
-                                    <p>
-                                        {{ $chatItem->name }}
-                                    </p>
-                                    <p class="text-xs">
-                                        {{ $chatItem->lastMessageAt->format('d-m-y h:i A') }}
-                                    </p>
+                                    <div>
+                                        <p>
+                                            {{ $chatItem->name }}
+                                        </p>
+                                        <p class="text-sm text-gray-700 mt-1 truncate">
+                                            {{ $chatItem->messages->last()->body }}
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs">
+                                            {{ $chatItem->lastMessageAt->format('h:i A') }}
+                                        </p>
+                                        @if ($chatItem->unread_messages)
+                                            <span class="inline-flex items-center justify-center px-2 py-1 mr-2 text-xs font-bold leading-none text-green-100 bg-green-600 rounded-full">
+                                                {{ $chatItem->unread_messages }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
-                                <p class="text-sm text-gray-700 mt-1 truncate">
-                                    {{ $chatItem->messages->last()->body }}
-                                </p>
                             </div>
                         </div>
                     @endforeach
@@ -83,9 +92,15 @@
                         <p class="text-gray-600 text-xs" x-show="chat_id == typingChatId">
                             Escribiendo ...
                         </p>
-                        <p class="text-green-600 text-xs" x-show="chat_id != typingChatId">
-                            En linea
-                        </p>
+                        @if($this->active)
+                            <p class="text-green-600 text-xs" x-show="chat_id != typingChatId" wire:key="online">
+                                En linea
+                            </p>
+                        @else
+                            <p class="text-red-600 text-xs" x-show="chat_id != typingChatId" wire:key="offline">
+                                Desconectado
+                            </p>
+                        @endif
                     </div>
                 </div>
                 <div class="h-[calc(100vh-11rem)] px-3 py-2 overflow-auto">
@@ -98,6 +113,9 @@
                                 </p>
                                 <p class="{{ $message->user_id == auth()->id() ? 'text-right' : 'text-left' }} text-xs text-gray-600 mt-1">
                                     {{ $message->created_at->format('d-m-y h:i A') }}
+                                    @if ($message->user_id == auth()->id())
+                                        <i class="fas fa-check-double ml-2 {{ $message->is_read == true ? 'text-blue-500' : 'text-gray-600' }}"></i>
+                                    @endif
                                 </p>
                             </div>
                         </div>

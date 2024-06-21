@@ -177,7 +177,7 @@ class ChatComponent extends Component
                 'is_read' => true
             ]);
             //----------
-            Notification::send($this->users_notifications, new \App\Notifications\NewMessage());
+            //Notification::send($this->users_notifications, new \App\Notifications\NewMessage());
             $this->dispatch('scrollIntoView');
         }
         return view('livewire.chat-component')->layout('layouts.chat');
